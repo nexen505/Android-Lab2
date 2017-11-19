@@ -1,37 +1,59 @@
 package com.komarov.meetings.model;
 
+import com.google.firebase.database.Exclude;
+import com.google.firebase.database.IgnoreExtraProperties;
+
 import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
  * Created by Ilia on 11.11.2017.
  */
 
+@IgnoreExtraProperties
 public class Meeting implements Serializable {
 
     public enum Priority {
         PLANNED, URGENT, POSSIBLE
     }
 
+    private String uid;
     private String title;
     private String description;
     private Date startDate;
     private Date endDate;
-    private List<Participant> participants;
+    private Map<String, Boolean> participants = new HashMap<>();
+    private int participantsCount = 0;
     private Priority priority;
+    public static final String
+            DATE_DELIMITER = "/",
+            TIME_DELIMITER = ":",
+            DATE_PATTERN = "dd/MM/yyyy",
+            TIME_PATTERN = "HH:mm",
+            DATE_TIME_PATTERN = String.format("%s %s", DATE_PATTERN, TIME_PATTERN);
 
     public Meeting() {
     }
 
-    public Meeting(String title, String description, Date startDate, Date endDate, List<Participant> participants, Priority priority) {
+    public Meeting(String uid, String title, String description, Date startDate, Date endDate, Map<String, Boolean> participants, Priority priority) {
+        this.uid = uid;
         this.title = title;
         this.description = description;
         this.startDate = startDate;
         this.endDate = endDate;
         this.participants = participants;
         this.priority = priority;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
     }
 
     public String getTitle() {
@@ -66,11 +88,11 @@ public class Meeting implements Serializable {
         this.endDate = endDate;
     }
 
-    public List<Participant> getParticipants() {
+    public Map<String, Boolean> getParticipants() {
         return participants;
     }
 
-    public void setParticipants(List<Participant> participants) {
+    public void setParticipants(Map<String, Boolean> participants) {
         this.participants = participants;
     }
 
@@ -80,6 +102,44 @@ public class Meeting implements Serializable {
 
     public void setPriority(Priority priority) {
         this.priority = priority;
+    }
+
+    public void addParticipant(String uid) {
+        if (uid != null && !uid.isEmpty()) {
+            if (participants.containsKey(uid)) {
+                participants.remove(uid);
+                participantsCount--;
+            }
+            participantsCount++;
+            participants.put(uid, true);
+        }
+
+    }
+
+    public void removeParticipant(String uid) {
+        if (uid != null && !uid.isEmpty()) {
+            if (participants.containsKey(uid)) {
+                participants.remove(uid);
+                participantsCount++;
+            }
+            participantsCount--;
+            participants.put(uid, false);
+        }
+    }
+
+    @Exclude
+    public Map<String, Object> toMap() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("uid", uid);
+        result.put("title", title);
+        result.put("description", description);
+        result.put("startDate", startDate);
+        result.put("endDate", endDate);
+        result.put("participants", participants);
+        result.put("participantsCount", participantsCount);
+        result.put("priority", priority);
+
+        return result;
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.komarov.meetings.model;
 
+import com.google.firebase.database.IgnoreExtraProperties;
+
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -7,6 +9,7 @@ import java.util.Objects;
  * Created by Ilia on 11.11.2017.
  */
 
+@IgnoreExtraProperties
 public class Participant implements Serializable {
 
     private String name;
