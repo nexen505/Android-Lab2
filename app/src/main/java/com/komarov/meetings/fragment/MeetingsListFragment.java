@@ -5,20 +5,18 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Query;
-import com.google.firebase.database.Transaction;
+import com.komarov.meetings.LoginActivity;
 import com.komarov.meetings.MeetingDetailActivity;
 import com.komarov.meetings.R;
 import com.komarov.meetings.model.Meeting;
@@ -33,7 +31,6 @@ public abstract class MeetingsListFragment extends Fragment {
 
     private FirebaseRecyclerAdapter<Meeting, MeetingViewHolder> mAdapter;
     private RecyclerView mRecycler;
-    private LinearLayoutManager mManager;
 
     public MeetingsListFragment() {
     }
@@ -56,14 +53,14 @@ public abstract class MeetingsListFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        mManager = new LinearLayoutManager(getActivity());
+        LinearLayoutManager mManager = new LinearLayoutManager(getActivity());
         mManager.setReverseLayout(true);
         mManager.setStackFromEnd(true);
         mRecycler.setLayoutManager(mManager);
 
         Query postsQuery = getQuery(mDatabase);
 
-        FirebaseRecyclerOptions options = new FirebaseRecyclerOptions.Builder<Meeting>()
+        FirebaseRecyclerOptions<Meeting> options = new FirebaseRecyclerOptions.Builder<Meeting>()
                 .setQuery(postsQuery, Meeting.class)
                 .build();
 
@@ -86,54 +83,10 @@ public abstract class MeetingsListFragment extends Fragment {
                     startActivity(intent);
                 });
 
-                viewHolder.bindToMessage(model, view -> {
-                    DatabaseReference globalPostRef = mDatabase.child("meetings").child(postRef.getKey());
-                    DatabaseReference userPostRef = mDatabase.child("user-meetings").child(model.getUid()).child(postRef.getKey());
-
-                    toGoClicked(globalPostRef);
-                    toGoClicked(userPostRef);
-                }, view -> {
-                    DatabaseReference globalPostRef = mDatabase.child("meetings").child(postRef.getKey());
-                    DatabaseReference userPostRef = mDatabase.child("user-meetings").child(model.getUid()).child(postRef.getKey());
-
-                    notToGoClicked(globalPostRef);
-                    notToGoClicked(userPostRef);
-                });
+                viewHolder.bindToMeeting(model);
             }
         };
         mRecycler.setAdapter(mAdapter);
-    }
-
-    private void toGoClicked(DatabaseReference postRef) {
-        toDecideClicked(postRef, true);
-    }
-
-    private void notToGoClicked(DatabaseReference postRef) {
-        toDecideClicked(postRef, false);
-    }
-
-    private void toDecideClicked(DatabaseReference postRef, boolean decision) {
-        postRef.runTransaction(new Transaction.Handler() {
-            @Override
-            public Transaction.Result doTransaction(MutableData mutableData) {
-                Meeting p = mutableData.getValue(Meeting.class);
-                if (p == null) {
-                    return Transaction.success(mutableData);
-                }
-
-                if (decision) p.addParticipant(getUid());
-                else p.removeParticipant(getUid());
-
-                mutableData.setValue(p);
-                return Transaction.success(mutableData);
-            }
-
-            @Override
-            public void onComplete(DatabaseError databaseError, boolean b,
-                                   DataSnapshot dataSnapshot) {
-                Log.d(TAG, "postTransaction:onComplete:" + databaseError);
-            }
-        });
     }
 
     @Override
@@ -152,7 +105,27 @@ public abstract class MeetingsListFragment extends Fragment {
         }
     }
 
-    public abstract String getUid();
+    public String getUid() {
+        final FirebaseUser currentUser = getCurrentUser();
+        if (currentUser != null)
+            return currentUser.getUid();
+        else {
+            getActivity().startActivity(new Intent(this.getContext(), LoginActivity.class));
+            getActivity().finish();
+            return null;
+        }
+    }
+
+    public FirebaseUser getCurrentUser() {
+        final FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null)
+            return currentUser;
+        else {
+            getActivity().startActivity(new Intent(this.getContext(), LoginActivity.class));
+            getActivity().finish();
+            return null;
+        }
+    }
 
     public abstract Query getQuery(DatabaseReference databaseReference);
 }

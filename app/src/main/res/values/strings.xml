@@ -24,4 +24,17 @@
 
     <string name="button_ok">OK</string>
     <string name="button_cancel">Cancel</string>
+    <string name="participant_icon">PARTICIPANT ICON</string>
+    <string name="start_time_title">Start time:</string>
+    <string name="end_time_title">End time:</string>
+    <string name="write_your_meeting_description">Write your meeting description..</string>
+    <string name="title">Title</string>
+    <string name="priority">Priority</string>
+    <string name="description">Description:</string>
+    <string name="confirm_deletion">Confirm deletion</string>
+    <string name="confirm_deletion_msg">Are you sure that you want to delete this meeting?</string>
+    <string name="confirm_visiting">Confirm visiting</string>
+    <string name="confirm_visiting_msg">Are you sure that you want to visit this meeting?</string>
+    <string name="confirm_leaving">Confirm leaving</string>
+    <string name="confirm_leaving_msg">Are you sure that you want to leave this meeting?</string>
 </resources>

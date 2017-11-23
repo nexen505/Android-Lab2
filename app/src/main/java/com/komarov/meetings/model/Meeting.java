@@ -20,7 +20,9 @@ public class Meeting implements Serializable {
         PLANNED, URGENT, POSSIBLE
     }
 
+    private String key;
     private String uid;
+    private String author;
     private String title;
     private String description;
     private Date startDate;
@@ -38,8 +40,9 @@ public class Meeting implements Serializable {
     public Meeting() {
     }
 
-    public Meeting(String uid, String title, String description, Date startDate, Date endDate, Map<String, Boolean> participants, Priority priority) {
+    public Meeting(String uid, String author, String title, String description, Date startDate, Date endDate, Map<String, Boolean> participants, Priority priority) {
         this.uid = uid;
+        this.author = author;
         this.title = title;
         this.description = description;
         this.startDate = startDate;
@@ -54,6 +57,14 @@ public class Meeting implements Serializable {
 
     public void setUid(String uid) {
         this.uid = uid;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
     }
 
     public String getTitle() {
@@ -104,6 +115,14 @@ public class Meeting implements Serializable {
         this.priority = priority;
     }
 
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
     public void addParticipant(String uid) {
         if (uid != null && !uid.isEmpty()) {
             if (participants.containsKey(uid)) {
@@ -127,10 +146,19 @@ public class Meeting implements Serializable {
         }
     }
 
+    public boolean hasParticipant(String uid) {
+        return Boolean.TRUE.equals(participants.get(uid));
+    }
+
+    public int getParticipantsCount() {
+        return participantsCount;
+    }
+
     @Exclude
     public Map<String, Object> toMap() {
         Map<String, Object> result = new HashMap<>();
         result.put("uid", uid);
+        result.put("author", author);
         result.put("title", title);
         result.put("description", description);
         result.put("startDate", startDate);

@@ -3,112 +3,42 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.komarov.meetings.MeetingDetailActivity">
 
-    <TextView
-        android:id="@+id/field_title"
+    <include
+        layout="@layout/layout_author_participants"
+        android:id="@+id/layout_title_participants" />
+
+    <include
+        layout="@layout/layout_title_start_end_time"
+        android:id="@+id/meeting_info_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_marginBottom="5dp"
-        android:layout_marginEnd="@dimen/activity_horizontal_margin"
-        android:layout_marginStart="@dimen/activity_horizontal_margin"
-        android:layout_marginTop="@dimen/activity_horizontal_margin"
-        android:maxLines="1" />
+        android:layout_below="@+id/layout_title_participants" />
 
-    <TextView
-        android:id="@+id/field_description"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/field_title"
-        android:layout_marginBottom="5dp"
-        android:layout_marginEnd="@dimen/activity_horizontal_margin"
-        android:layout_marginStart="@dimen/activity_horizontal_margin"
-        android:layout_marginTop="5dp"
-        android:maxLines="10"
-        android:scrollHorizontally="false" />
-
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/priorityLayout"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/field_description"
-        android:layout_marginBottom="5dp"
-        android:layout_marginEnd="@dimen/activity_horizontal_margin"
-        android:layout_marginStart="@dimen/activity_horizontal_margin"
-        android:layout_marginTop="5dp"
-        android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/field_priority"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:layout_below="@+id/meeting_info_layout">
+        <!--TextView
+            android:id="@+id/title"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/startDatePicker"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/priorityLayout"
-        android:layout_gravity="center"
-        android:orientation="horizontal"
-        android:padding="16dp">
-
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:text="@string/description"/-->
         <TextView
-            android:id="@+id/startDateTimeLabel"
-            style="@style/DateTimePicker.Button"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="@string/startDateLabel" />
+            android:id="@+id/meeting_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="@string/lorem" />
+    </RelativeLayout>
 
-        <TextView
-            android:id="@+id/field_startDate"
-            style="@style/DateTimePicker.Button"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1" />
-
-        <TextView
-            android:id="@+id/field_startTime"
-            style="@style/DateTimePicker.Button"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/endDatePicker"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/startDatePicker"
-        android:layout_gravity="center"
-        android:orientation="horizontal"
-        android:padding="16dp">
-
-        <TextView
-            android:id="@+id/endDateTimeLabel"
-            style="@style/DateTimePicker.Button"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="@string/endDateLabel" />
-
-        <TextView
-            android:id="@+id/field_endDate"
-            style="@style/DateTimePicker.Button"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1" />
-
-        <TextView
-            android:id="@+id/field_endTime"
-            style="@style/DateTimePicker.Button"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1" />
-
-    </LinearLayout>
+    <include layout="@layout/meeting_menu_layout" />
 
 </RelativeLayout>

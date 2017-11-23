@@ -34,13 +34,24 @@ public class BaseActivity extends AppCompatActivity {
     }
 
     public String getUid() {
-        final FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        final FirebaseUser currentUser = getCurrentUser();
         if (currentUser != null)
             return currentUser.getUid();
         else {
-            startActivity(new Intent(BaseActivity.this, LoginActivity.class));
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
             return null;
         }
     }
 
+    public FirebaseUser getCurrentUser() {
+        final FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null)
+            return currentUser;
+        else {
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+            return null;
+        }
+    }
 }

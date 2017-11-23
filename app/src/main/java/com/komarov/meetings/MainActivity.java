@@ -17,15 +17,13 @@ public class MainActivity extends BaseActivity {
 
     private static final String TAG = "MainActivity";
 
-    private FragmentPagerAdapter mPagerAdapter;
-    private ViewPager mViewPager;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mPagerAdapter = new FragmentPagerAdapter(getSupportFragmentManager()) {
+        ViewPager mViewPager = findViewById(R.id.container);
+        mViewPager.setAdapter(new FragmentPagerAdapter(getSupportFragmentManager()) {
             private final Fragment[] mFragments = new Fragment[]{
                     new RecentMeetingsFragment(),
                     new MyMeetingsFragment()
@@ -49,15 +47,14 @@ public class MainActivity extends BaseActivity {
             public CharSequence getPageTitle(int position) {
                 return mFragmentNames[position];
             }
-        };
+        });
 
-        mViewPager = findViewById(R.id.container);
-        mViewPager.setAdapter(mPagerAdapter);
         TabLayout tabLayout = findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
 
-        findViewById(R.id.fab).setOnClickListener(view -> {
-            startActivity(new Intent(MainActivity.this, NewMeetingActivity.class));
+        findViewById(R.id.fab_new_meeting).setOnClickListener(view -> {
+            final Intent intent = new Intent(MainActivity.this, NewMeetingActivity.class);
+            startActivity(intent);
         });
     }
 

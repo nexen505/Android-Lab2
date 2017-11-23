@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:padding="10dp"
     tools:context="com.komarov.meetings.NewMeetingActivity">
 
     <EditText
@@ -11,10 +12,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_marginBottom="5dp"
-        android:layout_marginStart="@dimen/activity_horizontal_margin"
-        android:layout_marginEnd="@dimen/activity_horizontal_margin"
-        android:layout_marginTop="@dimen/activity_horizontal_margin"
-        android:hint="Title"
+        android:gravity="start"
+        android:hint="@string/title"
         android:maxLines="1" />
 
     <EditText
@@ -23,29 +22,26 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/field_title"
         android:layout_marginBottom="5dp"
-        android:layout_marginStart="@dimen/activity_horizontal_margin"
-        android:layout_marginEnd="@dimen/activity_horizontal_margin"
-        android:layout_marginTop="5dp"
-        android:hint="Write your post..."
+        android:gravity="bottom"
+        android:hint="@string/write_your_meeting_description"
         android:inputType="textMultiLine"
+        android:lines="5"
         android:maxLines="10"
         android:scrollHorizontally="false" />
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <LinearLayout
+        android:id="@+id/priorityLayout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="5dp"
-        android:layout_marginStart="@dimen/activity_horizontal_margin"
-        android:layout_marginEnd="@dimen/activity_horizontal_margin"
-        android:layout_marginTop="5dp"
-        android:id="@+id/priorityLayout"
         android:layout_below="@+id/field_description"
+        android:layout_marginBottom="5dp"
         android:orientation="vertical">
 
         <Spinner
             android:id="@+id/prioritySpinner"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:hint="@string/priority" />
     </LinearLayout>
 
     <LinearLayout
@@ -54,8 +50,8 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/priorityLayout"
         android:layout_gravity="center"
-        android:orientation="horizontal"
-        android:padding="16dp">
+        android:layout_marginBottom="5dp"
+        android:orientation="horizontal">
 
         <TextView
             android:id="@+id/startDateTimeLabel"
@@ -63,6 +59,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:gravity="start"
             android:text="@string/startDateLabel" />
 
         <TextView
@@ -89,8 +86,8 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/startDatePicker"
         android:layout_gravity="center"
-        android:orientation="horizontal"
-        android:padding="16dp">
+        android:layout_marginBottom="5dp"
+        android:orientation="horizontal">
 
         <TextView
             android:id="@+id/endDateTimeLabel"
@@ -98,6 +95,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:gravity="start"
             android:text="@string/endDateLabel" />
 
         <TextView
@@ -124,7 +122,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
-        android:layout_margin="16dp"
+        android:layout_margin="5dp"
         android:src="@drawable/ic_navigation_check_24" />
 
 </RelativeLayout>

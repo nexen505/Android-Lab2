@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.github.clans.fab.FloatingActionMenu xmlns:fab="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/fab_menu"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_alignParentBottom="true"
+    android:layout_alignParentEnd="true"
+    fab:menu_backgroundColor="#ccffffff"
+    fab:menu_fab_label="Choose an action"
+    fab:fab_colorNormal="#DA4336"
+    fab:fab_colorPressed="#E75043"
+    fab:fab_colorRipple="#99FFFFFF"
+    fab:fab_showShadow="true"
+    fab:menu_labels_colorNormal="#333333"
+    fab:menu_labels_colorPressed="#444444"
+    fab:menu_labels_colorRipple="#66FFFFFF"
+    fab:menu_labels_showShadow="true"
+    fab:menu_labels_maxLines="-1"
+    fab:menu_labels_position="left"
+    fab:menu_openDirection="up"
+    fab:fab_shadowColor="#66000000"
+    fab:menu_labels_ellipsize="end"
+    fab:menu_labels_singleLine="true">
+
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/contacts_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_contacts_black_24dp"
+        fab:fab_label="Add from contacts"
+        fab:fab_size="mini" />
+
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/edit_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@android:drawable/ic_menu_edit"
+        fab:fab_label="Edit"
+        fab:fab_size="mini" />
+
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/delete_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@android:drawable/ic_menu_delete"
+        fab:fab_label="Delete"
+        fab:fab_size="mini" />
+
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/visit_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_navigation_check_24"
+        fab:fab_label="Visit"
+        fab:fab_size="mini" />
+
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/leave_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        fab:fab_label="Leave"
+        fab:fab_size="mini" />
+
+</com.github.clans.fab.FloatingActionMenu>

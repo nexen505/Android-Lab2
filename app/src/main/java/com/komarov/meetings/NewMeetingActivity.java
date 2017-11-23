@@ -42,11 +42,13 @@ public class NewMeetingActivity extends BaseActivity {
             .toArray(String[]::new);
 
     private static final String REQUIRED = "Required";
+    public static final String SOURCE_MEETING_KEY = "meeting";
     private DatePicker startDatePicker, endDatePicker;
     private TimePicker startTimePicker, endTimePicker;
     private int startYear, startMonth, startDay, startHours, startMinutes;
     private int endYear, endMonth, endDay, endHours, endMinutes;
     private Meeting.Priority meetingPriority;
+    private Meeting sourceMeeting = null;
 
     private EditText mTitleField, mDescriptionField;
     private Spinner mSpinner;
@@ -58,18 +60,46 @@ public class NewMeetingActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_meeting);
+        initialize();
+
+        Meeting meeting = (Meeting) getIntent().getSerializableExtra(SOURCE_MEETING_KEY);
+        if (meeting != null) {
+            sourceMeeting = meeting;
+            //TODO initialize form
+        } else {
+            final Calendar c = Calendar.getInstance();
+
+            startYear = c.get(Calendar.YEAR);
+            startMonth = c.get(Calendar.MONTH) + 1;
+            startDay = c.get(Calendar.DAY_OF_MONTH);
+            startHours = c.get(Calendar.HOUR_OF_DAY);
+            startMinutes = c.get(Calendar.MINUTE);
+
+            endYear = c.get(Calendar.YEAR);
+            endMonth = c.get(Calendar.MONTH) + 1;
+            endDay = c.get(Calendar.DAY_OF_MONTH);
+            endHours = c.get(Calendar.HOUR_OF_DAY);
+            endMinutes = c.get(Calendar.MINUTE);
+
+            setDateToTextView(mStartDateTextView, String.valueOf(startDay), String.valueOf(startMonth), String.valueOf(startYear));
+            setTimeToTextView(mStartTimeTextView, String.valueOf(startHours), String.valueOf(startMinutes));
+            setDateToTextView(mEndDateTextView, String.valueOf(endDay), String.valueOf(endMonth), String.valueOf(endYear));
+            setTimeToTextView(mEndTimeTextView, String.valueOf(endHours), String.valueOf(endMinutes));
+        }
+    }
+
+    private void initialize() {
+        mDatabase = FirebaseDatabase.getInstance().getReference();
 
         mStartDateTextView = findViewById(R.id.startDate);
         mStartTimeTextView = findViewById(R.id.startTime);
         mEndDateTextView = findViewById(R.id.endDate);
         mEndTimeTextView = findViewById(R.id.endTime);
-
         mTitleField = findViewById(R.id.field_title);
         mDescriptionField = findViewById(R.id.field_description);
-
-        mDatabase = FirebaseDatabase.getInstance().getReference();
-
+        mSpinner = findViewById(R.id.prioritySpinner);
         mSubmitButton = findViewById(R.id.fab_submit_meeting);
+
         mSubmitButton.setOnClickListener(v -> submitMeeting());
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
@@ -78,7 +108,6 @@ public class NewMeetingActivity extends BaseActivity {
                         .map(Enum::name)
                         .toArray(String[]::new));
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mSpinner = findViewById(R.id.prioritySpinner);
         mSpinner.setAdapter(adapter);
         mSpinner.setSelection(0);
         mSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -92,28 +121,6 @@ public class NewMeetingActivity extends BaseActivity {
             public void onNothingSelected(AdapterView<?> arg0) {
             }
         });
-
-        final Calendar c = Calendar.getInstance();
-
-        startYear = c.get(Calendar.YEAR);
-        startMonth = c.get(Calendar.MONTH) + 1;
-        startDay = c.get(Calendar.DAY_OF_MONTH);
-        startHours = c.get(Calendar.HOUR_OF_DAY);
-        startMinutes = c.get(Calendar.MINUTE);
-
-        endYear = c.get(Calendar.YEAR);
-        endMonth = c.get(Calendar.MONTH) + 1;
-        endDay = c.get(Calendar.DAY_OF_MONTH);
-        endHours = c.get(Calendar.HOUR_OF_DAY);
-        endMinutes = c.get(Calendar.MINUTE);
-
-        Bundle bundle = getIntent().getExtras();
-        if (bundle == null || bundle.isEmpty()) {
-            setDateToTextView(mStartDateTextView, String.valueOf(startDay), String.valueOf(startMonth), String.valueOf(startYear));
-            setTimeToTextView(mStartTimeTextView, String.valueOf(startHours), String.valueOf(startMinutes));
-            setDateToTextView(mEndDateTextView, String.valueOf(endDay), String.valueOf(endMonth), String.valueOf(endYear));
-            setTimeToTextView(mEndTimeTextView, String.valueOf(endHours), String.valueOf(endMinutes));
-        }
     }
 
     private void submitMeeting() {
@@ -121,12 +128,10 @@ public class NewMeetingActivity extends BaseActivity {
 
         if (meeting == null) {
             Log.e(TAG, "Meeting is unexpectedly null");
-            Toast.makeText(NewMeetingActivity.this,
-                    "Error: could not fetch user.",
-                    Toast.LENGTH_SHORT).show();
+            return;
         }
         setEditingEnabled(false);
-        Toast.makeText(this, "Posting meeting...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Adding meeting...", Toast.LENGTH_SHORT).show();
 
         final String userId = getUid();
         mDatabase.child("users").child(userId).addListenerForSingleValueEvent(
@@ -141,7 +146,11 @@ public class NewMeetingActivity extends BaseActivity {
                                     "Error: could not fetch user.",
                                     Toast.LENGTH_SHORT).show();
                         } else {
-                            writeNewMeeting(userId, meeting);
+                            if (sourceMeeting == null) {
+                                meeting.setUid(userId);
+                                meeting.setAuthor(user.getUsername());
+                                persistMeeting(userId, meeting);
+                            } else mergeMeeting(userId, meeting);
                         }
 
                         setEditingEnabled(true);
@@ -198,21 +207,23 @@ public class NewMeetingActivity extends BaseActivity {
         mStartTimeTextView.setEnabled(enabled);
         mEndDateTextView.setEnabled(enabled);
         mEndTimeTextView.setEnabled(enabled);
-        if (enabled) {
-            mSubmitButton.setVisibility(View.VISIBLE);
-        } else {
-            mSubmitButton.setVisibility(View.GONE);
-        }
+        mSubmitButton.setVisibility(enabled ? View.VISIBLE : View.GONE);
     }
 
-    private void writeNewMeeting(String userId, Meeting meeting) {
-        String key = mDatabase.child("meetings").push().getKey();
-        meeting.setUid(userId);
+    private void persistMeeting(String userId, Meeting meeting) {
+        updateMeeting(mDatabase.child("meetings").push().getKey(), userId, meeting);
+    }
+
+    private void mergeMeeting(String userId, Meeting meeting) {
+        updateMeeting(meeting.getKey(), userId, meeting);
+    }
+
+    private void updateMeeting(String meetingKey, String userId, Meeting meeting) {
         Map<String, Object> meetingValues = meeting.toMap();
 
         Map<String, Object> childUpdates = new HashMap<>();
-        childUpdates.put("/meetings/" + key, meetingValues);
-        childUpdates.put("/user-meetings/" + userId + "/" + key, meetingValues);
+        childUpdates.put("/meetings/" + meetingKey, meetingValues);
+        childUpdates.put("/user-meetings/" + userId + "/" + meetingKey, meetingValues);
 
         mDatabase.updateChildren(childUpdates);
     }

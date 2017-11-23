@@ -1,5 +1,8 @@
 package com.komarov.meetings.utils;
 
+import android.content.Context;
+import android.widget.Toast;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -16,6 +19,10 @@ public class Utils {
         } catch (Exception ex) {
             return null;
         }
+    }
+
+    public static void showToast(Context ctx, String msg) {
+        Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show();
     }
 
 }
