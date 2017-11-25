@@ -20,9 +20,9 @@ import com.komarov.meetings.fragment.AllMeetingsFragment;
 import com.komarov.meetings.fragment.MyMeetingsFragment;
 import com.komarov.meetings.fragment.SearchFragment;
 import com.komarov.meetings.model.Meeting;
+import com.komarov.meetings.receiver.BootReceiver;
 import com.komarov.meetings.service.MeetingsListService;
 
-import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends BaseActivity {
@@ -93,6 +93,18 @@ public class MainActivity extends BaseActivity {
         final String userId = intent.getStringExtra(MeetingsListService.USER_ID);
         final boolean toNotify = intent.getBooleanExtra(MeetingsListService.TO_NOTIFY, false);
 
+        Intent i = new Intent(context, BootReceiver.class);
+        i.setAction("com.komarov.meetings.broadcastReceiver.action.STARTED");
+        i.putExtra(MeetingsListService.USER_ID, userId);
+        i.putExtra(MeetingsListService.TO_NOTIFY, toNotify);
+
+        sendBroadcast(i);
+    }
+
+    /*private void initializeAlarmManager(Context context, Intent intent) {
+        final String userId = intent.getStringExtra(MeetingsListService.USER_ID);
+        final boolean toNotify = intent.getBooleanExtra(MeetingsListService.TO_NOTIFY, false);
+
         mAlarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent i = new Intent(context, MeetingsListService.class);
         i.setAction(MeetingsListService.ACTION_CHECK_DATA);
@@ -103,7 +115,7 @@ public class MainActivity extends BaseActivity {
         mAlarmMgr.setRepeating(AlarmManager.RTC_WAKEUP, new Date().getTime(),
                 1000 * 60 * 10, mAlarmIntent);
         MeetingsListService.startActionCheck(context, userId, toNotify);
-    }
+    }*/
 
     public void onDestroy() {
         super.onDestroy();
