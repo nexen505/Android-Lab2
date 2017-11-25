@@ -22,15 +22,16 @@ import com.komarov.meetings.R;
 import com.komarov.meetings.model.Meeting;
 import com.komarov.meetings.viewholder.MeetingViewHolder;
 
+import java.util.List;
+
 
 public abstract class MeetingsListFragment extends Fragment {
 
     private static final String TAG = "MeetingsListFragment";
 
-    private DatabaseReference mDatabase;
-
-    private FirebaseRecyclerAdapter<Meeting, MeetingViewHolder> mAdapter;
     private RecyclerView mRecycler;
+    //    private RecyclerView.Adapter mAdapter;
+    private FirebaseRecyclerAdapter<Meeting, MeetingViewHolder> mAdapter;
 
     public MeetingsListFragment() {
     }
@@ -40,8 +41,6 @@ public abstract class MeetingsListFragment extends Fragment {
                              Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         View rootView = inflater.inflate(R.layout.fragment_all_meetings, container, false);
-
-        mDatabase = FirebaseDatabase.getInstance().getReference();
 
         mRecycler = rootView.findViewById(R.id.meetings_list);
         mRecycler.setHasFixedSize(true);
@@ -58,10 +57,13 @@ public abstract class MeetingsListFragment extends Fragment {
         mManager.setStackFromEnd(true);
         mRecycler.setLayoutManager(mManager);
 
-        Query postsQuery = getQuery(mDatabase);
+        Query meetingsQuery = getQuery(FirebaseDatabase.getInstance().getReference());
+        initializeRecyclerView(meetingsQuery);
+    }
 
+    private void initializeRecyclerView(Query meetingsQuery) {
         FirebaseRecyclerOptions<Meeting> options = new FirebaseRecyclerOptions.Builder<Meeting>()
-                .setQuery(postsQuery, Meeting.class)
+                .setQuery(meetingsQuery, Meeting.class)
                 .build();
 
         mAdapter = new FirebaseRecyclerAdapter<Meeting, MeetingViewHolder>(options) {
@@ -74,18 +76,26 @@ public abstract class MeetingsListFragment extends Fragment {
 
             @Override
             protected void onBindViewHolder(MeetingViewHolder viewHolder, int position, final Meeting model) {
-                final DatabaseReference postRef = getRef(position);
+                final DatabaseReference meetingRef = getRef(position);
 
-                final String postKey = postRef.getKey();
+                final String meetingKey = meetingRef.getKey();
                 viewHolder.itemView.setOnClickListener(v -> {
                     Intent intent = new Intent(getActivity(), MeetingDetailActivity.class);
-                    intent.putExtra(MeetingDetailActivity.EXTRA_MEETING_KEY, postKey);
+                    intent.putExtra(MeetingDetailActivity.EXTRA_MEETING_KEY, meetingKey);
                     startActivity(intent);
                 });
 
                 viewHolder.bindToMeeting(model);
             }
         };
+        /*RecyclerView.Adapter mAdapter = new MeetingAdapter(getMeetings(), meeting -> v -> {
+            Intent intent = new Intent(getActivity(), MeetingDetailActivity.class);
+            intent.putExtra(MeetingDetailActivity.EXTRA_MEETING_KEY, meeting.getKey());
+            intent.putExtra(MeetingDetailActivity.EXTRA_MEETING, meeting);
+            startActivity(intent);
+        });*/
+
+        //TODO some how filter options by date
         mRecycler.setAdapter(mAdapter);
     }
 
@@ -128,4 +138,6 @@ public abstract class MeetingsListFragment extends Fragment {
     }
 
     public abstract Query getQuery(DatabaseReference databaseReference);
+
+    public abstract List<Meeting> getMeetings();
 }

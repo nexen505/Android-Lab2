@@ -1,6 +1,7 @@
 package com.komarov.meetings;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.text.TextUtils;
@@ -22,6 +23,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.komarov.meetings.model.Meeting;
+import com.komarov.meetings.model.StringDateTime;
 import com.komarov.meetings.model.User;
 import com.komarov.meetings.utils.Utils;
 
@@ -29,7 +31,9 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.komarov.meetings.model.Meeting.DATE_DELIMITER;
 import static com.komarov.meetings.model.Meeting.TIME_DELIMITER;
@@ -37,9 +41,9 @@ import static com.komarov.meetings.model.Meeting.TIME_DELIMITER;
 public class NewMeetingActivity extends BaseActivity {
 
     private static final String TAG = "NewMeetingActivity";
-    private String[] priorities = Arrays.stream(Meeting.Priority.class.getEnumConstants())
-            .map(Enum::name)
-            .toArray(String[]::new);
+    private List<String> prioritiesList = Arrays.stream(Meeting.Priority.class.getEnumConstants())
+            .map(Enum::name).collect(Collectors.toList());
+    private String[] priorities = prioritiesList.toArray(new String[0]);
 
     private static final String REQUIRED = "Required";
     public static final String SOURCE_MEETING_KEY = "meeting";
@@ -65,7 +69,27 @@ public class NewMeetingActivity extends BaseActivity {
         Meeting meeting = (Meeting) getIntent().getSerializableExtra(SOURCE_MEETING_KEY);
         if (meeting != null) {
             sourceMeeting = meeting;
-            //TODO initialize form
+
+            mTitleField.setText(meeting.getTitle());
+            mDescriptionField.setText(meeting.getDescription());
+            mSpinner.setSelection(prioritiesList.indexOf(meeting.getPriority().toString()));
+
+            StringDateTime dt = new StringDateTime(meeting.getStartDate());
+            String d = dt.getDate(),
+                    t = dt.getTime();
+            String[] parts = d.split(Meeting.DATE_DELIMITER);
+            setDateToTextView(mStartDateTextView, parts[0], parts[1], parts[2]);
+            parts = t.split(Meeting.TIME_DELIMITER);
+            setTimeToTextView(mStartTimeTextView, parts[0], parts[1]);
+
+            dt = new StringDateTime(meeting.getEndDate());
+            d = dt.getDate();
+            t = dt.getTime();
+            parts = d.split(Meeting.DATE_DELIMITER);
+            setDateToTextView(mEndDateTextView, parts[0], parts[1], parts[2]);
+            parts = t.split(Meeting.TIME_DELIMITER);
+            setTimeToTextView(mEndTimeTextView, parts[0], parts[1]);
+            //TODO check initialization
         } else {
             final Calendar c = Calendar.getInstance();
 
@@ -154,6 +178,7 @@ public class NewMeetingActivity extends BaseActivity {
                         }
 
                         setEditingEnabled(true);
+                        startActivity(new Intent(NewMeetingActivity.this, MainActivity.class));
                         finish();
                     }
 
@@ -254,7 +279,7 @@ public class NewMeetingActivity extends BaseActivity {
 
     public void openDateDialog(final int d, final int m, final int y,
                                final View promptView, final DatePicker datePicker, final TextView dateTextView) {
-        datePicker.init(y, m, d, null);
+        datePicker.init(y, m - 1, d, null);
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
         alertDialogBuilder.setView(promptView);
         alertDialogBuilder
@@ -284,9 +309,9 @@ public class NewMeetingActivity extends BaseActivity {
     private void setTimeToTextView(final TextView textView, final String hours, final String minutes) {
         textView.setText(String.format(
                 "%s%s%s",
-                hours,
+                hours.length() < 2 ? "0" + hours : hours,
                 TIME_DELIMITER,
-                minutes));
+                minutes.length() < 2 ? "0" + minutes : minutes));
     }
 
     public void onChooseStartTime(View view) {

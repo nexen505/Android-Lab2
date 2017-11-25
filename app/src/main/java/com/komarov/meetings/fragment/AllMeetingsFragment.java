@@ -7,21 +7,18 @@ import com.komarov.meetings.model.Meeting;
 
 import java.util.List;
 
-/**
- * Created by Ilia on 19.11.2017.
- */
+public class AllMeetingsFragment extends MeetingsListFragment {
 
-public class MyMeetingsFragment extends MeetingsListFragment {
-
-    public MyMeetingsFragment() {
+    public AllMeetingsFragment() {
     }
 
     @Override
     public Query getQuery(DatabaseReference databaseReference) {
-        return databaseReference.child("user-meetings").child(getUid());
+        return databaseReference.child("meetings");
     }
 
     public List<Meeting> getMeetings() {
-        return ((MainActivity) getActivity()).getMyMeetings();
+        return ((MainActivity) getActivity()).getRecentMeetings();
     }
+
 }

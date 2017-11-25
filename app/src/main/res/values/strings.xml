@@ -12,12 +12,12 @@
 
     <string name="title_sign_in">Welcome</string>
     <string name="sign_up">Sign Up</string>
-    <string name="hint_password">password</string>
-    <string name="hint_email">email</string>
+    <string name="hint_password">Password</string>
+    <string name="hint_email">Email</string>
     <string name="sign_in">Sign In</string>
 
-    <string name="heading_meetings">Recent</string>
-    <string name="heading_my_meetings">My Posts</string>
+    <string name="heading_meetings">All meetings</string>
+    <string name="heading_my_meetings">My meetings</string>
 
     <string name="startDateLabel">Start date:</string>
     <string name="endDateLabel">End date:</string>
@@ -37,4 +37,16 @@
     <string name="confirm_visiting_msg">Are you sure that you want to visit this meeting?</string>
     <string name="confirm_leaving">Confirm leaving</string>
     <string name="confirm_leaving_msg">Are you sure that you want to leave this meeting?</string>
+    <string name="hint_full_name">Full name</string>
+    <string name="hint_position">Position</string>
+    <string name="reload_meetings">Reload meetings</string>
+    <string name="notification">Notification</string>
+    <string name="update_notification_text">List of meetings is updated!</string>
+    <string name="progress_loading">Loading...</string>
+    <string name="network_warning_title">Warning</string>
+    <string name="network_warning_message">Network is not available now. Please try again later</string>
+    <string name="search">Search</string>
+    <string name="text_for_search_hint">Text for search</string>
+    <string name="search_Fragment_tab_title">Search</string>
+    <string name="data_is_loaded_msg">Data is loaded</string>
 </resources>

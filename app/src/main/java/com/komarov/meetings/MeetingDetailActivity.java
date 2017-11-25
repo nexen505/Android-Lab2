@@ -4,7 +4,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,18 +22,25 @@ import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 import com.komarov.meetings.model.Meeting;
 import com.komarov.meetings.model.StringDateTime;
+import com.komarov.meetings.model.User;
+import com.komarov.meetings.service.NetworkService;
+import com.komarov.meetings.utils.Utils;
+
+import java.util.List;
 
 public class MeetingDetailActivity extends BaseActivity {
     private static final String TAG = "MeetingDetailActivity";
     public static final String EXTRA_MEETING_KEY = "meeting_key";
+    public static final String EXTRA_MEETING = "meeting";
 
-    private DatabaseReference mDatabase, mMeetingRef, mMeetingGlobalRef;
+    private DatabaseReference mDatabase, mMeetingRef, mMeetingGlobalRef, mUserRef;
     private ValueEventListener mMeetingListener;
 
     private TextView mAuthorView, mParticipantsCountView,
             mTitleView, mDescriptionView, mPriorityView,
             mStartDateView, mStartTimeView,
             mEndDateView, mEndTimeView;
+    private RelativeLayout mParticipantsLayout;
 
     private FloatingActionMenu fam;
     private FloatingActionButton fabEdit, fabDelete, fabVisit, fabLeave, fabAddContacts;
@@ -45,11 +55,14 @@ public class MeetingDetailActivity extends BaseActivity {
             throw new IllegalArgumentException("Must pass EXTRA_MEETING_KEY");
         }
 
+        NetworkService.startActionCheckNetwork(this);
         mDatabase = FirebaseDatabase.getInstance().getReference();
         mMeetingRef = mDatabase.child("meetings").child(mMeetingKey);
         mMeetingGlobalRef = mDatabase.child("user-meetings").child(getUid()).child(mMeetingKey);
+        mUserRef = mDatabase.child("users").child(getUid());
 
         initializeViews();
+        mParticipantsLayout = findViewById(R.id.layout_participants);
     }
 
     private void initializeViews() {
@@ -88,6 +101,9 @@ public class MeetingDetailActivity extends BaseActivity {
 
     private void initializeFabs(Meeting meeting) {
         initializeFabs(onFabClick(meeting));
+        if (fam.isOpened()) {
+            fam.close(true);
+        }
         filterFabs(meeting);
     }
 
@@ -103,6 +119,7 @@ public class MeetingDetailActivity extends BaseActivity {
                 ad.setTitle(R.string.confirm_deletion);
                 ad.setMessage(R.string.confirm_deletion_msg);
                 ad.setPositiveButton(R.string.button_ok, (dialog, arg1) -> {
+                    NetworkService.startActionCheckNetwork(this);
                     mMeetingGlobalRef.removeValue();
                     mMeetingRef.removeValue();
                     Intent intent = new Intent(this, MainActivity.class);
@@ -117,8 +134,8 @@ public class MeetingDetailActivity extends BaseActivity {
                 ad.setTitle(R.string.confirm_visiting);
                 ad.setMessage(R.string.confirm_visiting_msg);
                 ad.setPositiveButton(R.string.button_ok, (dialog, arg1) -> {
-                    visitClicked(mMeetingGlobalRef);
-                    visitClicked(mMeetingRef);
+                    visitClicked(mMeetingGlobalRef, mUserRef);
+                    visitClicked(mMeetingRef, mUserRef);
                 });
                 ad.setNegativeButton(R.string.button_cancel, (dialog, arg1) -> {
                 });
@@ -128,8 +145,8 @@ public class MeetingDetailActivity extends BaseActivity {
                 ad.setTitle(R.string.confirm_leaving);
                 ad.setMessage(R.string.confirm_leaving_msg);
                 ad.setPositiveButton(R.string.button_ok, (dialog, arg1) -> {
-                    leaveClicked(mMeetingGlobalRef);
-                    leaveClicked(mMeetingRef);
+                    leaveClicked(mMeetingGlobalRef, mUserRef);
+                    leaveClicked(mMeetingRef, mUserRef);
                 });
                 ad.setNegativeButton(R.string.button_cancel, (dialog, arg1) -> {
                 });
@@ -146,6 +163,9 @@ public class MeetingDetailActivity extends BaseActivity {
             if (!getUid().equals(meeting.getUid())) {
                 fabEdit.setVisibility(View.GONE);
                 fabDelete.setVisibility(View.GONE);
+            } else {
+                fabEdit.setVisibility(View.VISIBLE);
+                fabDelete.setVisibility(View.VISIBLE);
             }
             if (meeting.hasParticipant(getUid())) {
                 fabVisit.setVisibility(View.GONE);
@@ -161,6 +181,7 @@ public class MeetingDetailActivity extends BaseActivity {
     public void onStart() {
         super.onStart();
 
+        NetworkService.startActionCheckNetwork(this);
         mMeetingListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -177,6 +198,7 @@ public class MeetingDetailActivity extends BaseActivity {
                     mStartTimeView.setText(start.getTime());
                     mEndDateView.setText(end.getDate());
                     mEndTimeView.setText(start.getTime());
+                    initializeActiveParticipants(meeting);
                     initializeFabs(meeting);
                 }
             }
@@ -192,6 +214,20 @@ public class MeetingDetailActivity extends BaseActivity {
 
     }
 
+    private void initializeActiveParticipants(Meeting meeting) {
+
+        final List<String> activeParticipants = meeting.getActiveParticipants();
+        if (activeParticipants != null && activeParticipants.size() > 0) {
+            TextView view = new TextView(this);
+            String participants = "Участники: ".concat(Utils.join(", ", activeParticipants));
+            view.setGravity(Gravity.START);
+            RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            view.setText(participants);
+            mParticipantsLayout.addView(view, layoutParams);
+        }
+
+    }
+
     @Override
     public void onStop() {
         super.onStop();
@@ -202,35 +238,57 @@ public class MeetingDetailActivity extends BaseActivity {
 
     }
 
-    private void visitClicked(DatabaseReference postRef) {
-        toDecideClicked(postRef, true);
+    private void visitClicked(DatabaseReference meetingRef, DatabaseReference userRef) {
+        toDecideClicked(meetingRef, userRef, true);
     }
 
-    private void leaveClicked(DatabaseReference postRef) {
-        toDecideClicked(postRef, false);
+    private void leaveClicked(DatabaseReference meetingRef, DatabaseReference userRef) {
+        toDecideClicked(meetingRef, userRef, false);
     }
 
-    private void toDecideClicked(DatabaseReference postRef, boolean decision) {
-        postRef.runTransaction(new Transaction.Handler() {
-            @Override
-            public Transaction.Result doTransaction(MutableData mutableData) {
-                Meeting p = mutableData.getValue(Meeting.class);
-                if (p == null) {
-                    return Transaction.success(mutableData);
-                }
+    private void toDecideClicked(DatabaseReference meetingRef, DatabaseReference userRef, boolean decision) {
+        NetworkService.startActionCheckNetwork(this);
+        userRef.addListenerForSingleValueEvent(
+                new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        User user = dataSnapshot.getValue(User.class);
 
-                if (decision) p.addParticipant(getUid());
-                else p.removeParticipant(getUid());
+                        if (user == null) {
+                            Log.e(TAG, "User " + getUid() + " is unexpectedly null");
+                            Toast.makeText(MeetingDetailActivity.this,
+                                    "Error: could not fetch user.",
+                                    Toast.LENGTH_SHORT).show();
+                        } else {
+                            meetingRef.runTransaction(new Transaction.Handler() {
+                                @Override
+                                public Transaction.Result doTransaction(MutableData mutableData) {
+                                    Meeting p = mutableData.getValue(Meeting.class);
+                                    if (p == null) {
+                                        return Transaction.success(mutableData);
+                                    }
 
-                mutableData.setValue(p);
-                return Transaction.success(mutableData);
-            }
+                                    if (decision) p.addParticipant(getUid(), user.getUsername());
+                                    else p.removeParticipant(getUid());
 
-            @Override
-            public void onComplete(DatabaseError databaseError, boolean b,
-                                   DataSnapshot dataSnapshot) {
-                Log.d(TAG, "postTransaction:onComplete:" + databaseError);
-            }
-        });
+                                    mutableData.setValue(p);
+                                    return Transaction.success(mutableData);
+                                }
+
+                                @Override
+                                public void onComplete(DatabaseError databaseError, boolean b,
+                                                       DataSnapshot dataSnapshot) {
+                                    Log.d(TAG, "meetingTransaction:onComplete:" + databaseError);
+                                }
+                            });
+                        }
+
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        Log.w(TAG, "getUser:onCancelled", databaseError.toException());
+                    }
+                });
     }
 }

@@ -25,4 +25,14 @@ public class Utils {
         Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show();
     }
 
+    public static String join(String separator, Iterable<String> strings) {
+        StringBuilder sb = new StringBuilder();
+        String sep = "";
+        for (String s : strings) {
+            sb.append(sep).append(s);
+            sep = separator;
+        }
+        return sb.toString();
+    }
+
 }

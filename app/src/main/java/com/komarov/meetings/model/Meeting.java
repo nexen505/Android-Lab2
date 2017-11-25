@@ -4,10 +4,14 @@ import com.google.firebase.database.Exclude;
 import com.google.firebase.database.IgnoreExtraProperties;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Created by Ilia on 11.11.2017.
@@ -15,6 +19,8 @@ import java.util.Objects;
 
 @IgnoreExtraProperties
 public class Meeting implements Serializable {
+
+    public static final String MEETINGS_KEY = "meetings", USER_MEETINGS_KEY = "user-meetings";
 
     public enum Priority {
         PLANNED, URGENT, POSSIBLE
@@ -25,9 +31,11 @@ public class Meeting implements Serializable {
     private String author;
     private String title;
     private String description;
+    private long creationTime;
     private Date startDate;
     private Date endDate;
-    private Map<String, Boolean> participants = new HashMap<>();
+    private Map<String, String> participants = new HashMap<>();
+    private List<String> activeParticipants = new ArrayList<>();
     private int participantsCount = 0;
     private Priority priority;
     public static final String
@@ -38,9 +46,10 @@ public class Meeting implements Serializable {
             DATE_TIME_PATTERN = String.format("%s %s", DATE_PATTERN, TIME_PATTERN);
 
     public Meeting() {
+        this.creationTime = new Date().getTime();
     }
 
-    public Meeting(String uid, String author, String title, String description, Date startDate, Date endDate, Map<String, Boolean> participants, Priority priority) {
+    public Meeting(String uid, String author, String title, String description, Date startDate, Date endDate, Map<String, String> participants, Priority priority) {
         this.uid = uid;
         this.author = author;
         this.title = title;
@@ -49,6 +58,7 @@ public class Meeting implements Serializable {
         this.endDate = endDate;
         this.participants = participants;
         this.priority = priority;
+        this.creationTime = new Date().getTime();
     }
 
     public String getUid() {
@@ -83,6 +93,10 @@ public class Meeting implements Serializable {
         this.description = description;
     }
 
+    public long getCreationTime() {
+        return creationTime;
+    }
+
     public Date getStartDate() {
         return startDate;
     }
@@ -99,11 +113,11 @@ public class Meeting implements Serializable {
         this.endDate = endDate;
     }
 
-    public Map<String, Boolean> getParticipants() {
+    public Map<String, String> getParticipants() {
         return participants;
     }
 
-    public void setParticipants(Map<String, Boolean> participants) {
+    public void setParticipants(Map<String, String> participants) {
         this.participants = participants;
     }
 
@@ -123,14 +137,14 @@ public class Meeting implements Serializable {
         this.key = key;
     }
 
-    public void addParticipant(String uid) {
+    public void addParticipant(String uid, String username) {
         if (uid != null && !uid.isEmpty()) {
             if (participants.containsKey(uid)) {
-                participants.remove(uid);
                 participantsCount--;
+                participants.remove(uid);
             }
+            participants.put(uid, username);
             participantsCount++;
-            participants.put(uid, true);
         }
 
     }
@@ -138,20 +152,32 @@ public class Meeting implements Serializable {
     public void removeParticipant(String uid) {
         if (uid != null && !uid.isEmpty()) {
             if (participants.containsKey(uid)) {
+                participantsCount--;
                 participants.remove(uid);
-                participantsCount++;
             }
-            participantsCount--;
-            participants.put(uid, false);
         }
     }
 
+    public List<String> getActiveParticipants() {
+        if (participants == null) return Collections.emptyList();
+        return participants.entrySet()
+                .stream()
+                .map(Map.Entry::getValue)
+                .sorted()
+                .collect(Collectors.toList());
+//        return activeParticipants;
+    }
+
+    public void setActiveParticipants(List<String> l) {
+        activeParticipants = l;
+    }
+
     public boolean hasParticipant(String uid) {
-        return Boolean.TRUE.equals(participants.get(uid));
+        return getParticipants().containsKey(uid);
     }
 
     public int getParticipantsCount() {
-        return participantsCount;
+        return getParticipants().size();
     }
 
     @Exclude
@@ -161,6 +187,7 @@ public class Meeting implements Serializable {
         result.put("author", author);
         result.put("title", title);
         result.put("description", description);
+        result.put("creationTime", creationTime);
         result.put("startDate", startDate);
         result.put("endDate", endDate);
         result.put("participants", participants);

@@ -10,21 +10,22 @@
     tools:context="com.komarov.meetings.MeetingDetailActivity">
 
     <include
-        layout="@layout/layout_author_participants"
-        android:id="@+id/layout_title_participants" />
+        android:id="@+id/layout_title_participants"
+        layout="@layout/layout_author_participants" />
 
     <include
-        layout="@layout/layout_title_start_end_time"
         android:id="@+id/meeting_info_layout"
+        layout="@layout/layout_title_start_end_time"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/layout_title_participants" />
 
     <RelativeLayout
+        android:id="@+id/layout_description"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/activity_vertical_margin"
-        android:layout_below="@+id/meeting_info_layout">
+        android:layout_below="@+id/meeting_info_layout"
+        android:layout_marginTop="@dimen/activity_vertical_margin">
         <!--TextView
             android:id="@+id/title"
             android:layout_width="match_parent"
@@ -37,6 +38,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             tools:text="@string/lorem" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/layout_description"
+        android:id="@+id/layout_participants"
+        android:layout_marginTop="@dimen/activity_vertical_margin">
+
     </RelativeLayout>
 
     <include layout="@layout/meeting_menu_layout" />
