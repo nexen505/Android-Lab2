@@ -94,7 +94,7 @@ public class MeetingsListService extends IntentService {
             myMeetings = new ArrayList<>();
             recentMeetings = new ArrayList<>();
             meetingListener = new MeetingListListener(db, userId, toNotify);
-            db.addValueEventListener(meetingListener); //TODO there's 'permission denied' error
+            db.addValueEventListener(meetingListener);
         } else {
             responseIntent.setAction(ACTION_LOAD_DATA);
             responseIntent.addCategory(Intent.CATEGORY_DEFAULT);
@@ -263,25 +263,29 @@ public class MeetingsListService extends IntentService {
         }
 
         private void showNotificationForNewMeetings(int count) {
-            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(),
-                    0, intent,
-                    PendingIntent.FLAG_CANCEL_CURRENT);
+            if (count > 0) {
+                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(),
+                        0, intent,
+                        PendingIntent.FLAG_CANCEL_CURRENT);
 
-            Notification.Builder builder = new Notification.Builder(getApplicationContext());
+                Notification.Builder builder = new Notification.Builder(getApplicationContext());
 
-            builder.setContentIntent(pendingIntent)
-                    .setSmallIcon(R.drawable.ic_launcher_foreground)
-                    .setTicker(getString(R.string.notification))
-                    .setWhen(System.currentTimeMillis())
-                    .setAutoCancel(true)
-                    .setContentTitle(getString(R.string.notification))
-                    .setContentText(getString(R.string.update_notification_text));
-            Notification notification = builder.build();
+                final String string = getString(R.string.update_notification_text).concat(" " + count + " new meetings!");
+                builder.setContentIntent(pendingIntent)
+                        .setSmallIcon(R.drawable.ic_launcher_foreground)
+                        .setTicker(getString(R.string.notification))
+                        .setWhen(System.currentTimeMillis())
+                        .setAutoCancel(true)
+                        .setContentTitle(getString(R.string.notification))
+                        .setContentText(string);
+                Notification notification = builder.build();
+                notification.defaults = Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE;
 
-            NotificationManager manager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-            if (manager != null)
-                manager.notify(new Random().nextInt(), notification);
+                NotificationManager manager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+                if (manager != null)
+                    manager.notify(new Random().nextInt(), notification);
+            }
         }
 
         @Override

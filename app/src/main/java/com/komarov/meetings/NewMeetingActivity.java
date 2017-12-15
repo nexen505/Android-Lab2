@@ -170,11 +170,17 @@ public class NewMeetingActivity extends BaseActivity {
                                     "Error: could not fetch user.",
                                     Toast.LENGTH_SHORT).show();
                         } else {
+                            meeting.setCreationTime(new Date().getTime());
                             if (sourceMeeting == null) {
                                 meeting.setUid(userId);
                                 meeting.setAuthor(user.getUsername());
-                                persistMeeting(userId, meeting);
-                            } else mergeMeeting(userId, meeting);
+                                persistMeeting(meeting.getUid(), meeting);
+                            } else {
+                                meeting.setUid(sourceMeeting.getUid());
+                                meeting.setAuthor(sourceMeeting.getAuthor());
+                                meeting.setKey(sourceMeeting.getKey());
+                                mergeMeeting(meeting.getUid(), meeting);
+                            }
                         }
 
                         setEditingEnabled(true);

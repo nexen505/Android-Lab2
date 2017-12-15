@@ -40,7 +40,7 @@
     <string name="hint_full_name">Full name</string>
     <string name="hint_position">Position</string>
     <string name="reload_meetings">Reload meetings</string>
-    <string name="notification">Notification</string>
+    <string name="notification">New meetings</string>
     <string name="update_notification_text">List of meetings is updated!</string>
     <string name="progress_loading">Loading...</string>
     <string name="network_warning_title">Warning</string>

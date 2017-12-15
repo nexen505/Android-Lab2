@@ -97,6 +97,10 @@ public class Meeting implements Serializable {
         return creationTime;
     }
 
+    public void setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
+    }
+
     public Date getStartDate() {
         return startDate;
     }
