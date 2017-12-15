@@ -84,38 +84,14 @@ public class MainActivity extends BaseActivity {
         intentFilterTime.addCategory(Intent.CATEGORY_DEFAULT);
         registerReceiver(mOnUpdateReceiver, intentFilterTime);
 
-        initializeAlarmManager(this, getIntent());
-
-//        updateMeetings();
+        pingBootReceiver(this);
     }
 
-    private void initializeAlarmManager(Context context, Intent intent) {
-        final String userId = intent.getStringExtra(MeetingsListService.USER_ID);
-        final boolean toNotify = intent.getBooleanExtra(MeetingsListService.TO_NOTIFY, false);
-
+    private void pingBootReceiver(Context context) {
         Intent i = new Intent(context, BootReceiver.class);
         i.setAction("com.komarov.meetings.broadcastReceiver.action.STARTED");
-        i.putExtra(MeetingsListService.USER_ID, userId);
-        i.putExtra(MeetingsListService.TO_NOTIFY, toNotify);
-
         sendBroadcast(i);
     }
-
-    /*private void initializeAlarmManager(Context context, Intent intent) {
-        final String userId = intent.getStringExtra(MeetingsListService.USER_ID);
-        final boolean toNotify = intent.getBooleanExtra(MeetingsListService.TO_NOTIFY, false);
-
-        mAlarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        Intent i = new Intent(context, MeetingsListService.class);
-        i.setAction(MeetingsListService.ACTION_CHECK_DATA);
-        i.putExtra(MeetingsListService.USER_ID, userId);
-        i.putExtra(MeetingsListService.TO_NOTIFY, toNotify);
-
-        mAlarmIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
-        mAlarmMgr.setRepeating(AlarmManager.RTC_WAKEUP, new Date().getTime(),
-                1000 * 60 * 10, mAlarmIntent);
-        MeetingsListService.startActionCheck(context, userId, toNotify);
-    }*/
 
     public void onDestroy() {
         super.onDestroy();
@@ -154,7 +130,7 @@ public class MainActivity extends BaseActivity {
     }
 
     public void updateMeetings() {
-        MeetingsListService.startActionLoad(getApplicationContext(), getUid(), false);
+        MeetingsListService.startActionLoad(getApplicationContext(), getUid());
     }
 
     public class OnUpdateReceiver extends BroadcastReceiver {

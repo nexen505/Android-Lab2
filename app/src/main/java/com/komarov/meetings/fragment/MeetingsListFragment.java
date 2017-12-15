@@ -88,12 +88,6 @@ public abstract class MeetingsListFragment extends Fragment {
                 viewHolder.bindToMeeting(model);
             }
         };
-        /*RecyclerView.Adapter mAdapter = new MeetingAdapter(getMeetings(), meeting -> v -> {
-            Intent intent = new Intent(getActivity(), MeetingDetailActivity.class);
-            intent.putExtra(MeetingDetailActivity.EXTRA_MEETING_KEY, meeting.getKey());
-            intent.putExtra(MeetingDetailActivity.EXTRA_MEETING, meeting);
-            startActivity(intent);
-        });*/
 
         //TODO some how filter options by date
         mRecycler.setAdapter(mAdapter);

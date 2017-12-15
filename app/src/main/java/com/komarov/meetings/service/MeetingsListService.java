@@ -22,6 +22,7 @@ import com.komarov.meetings.model.User;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -40,24 +41,31 @@ public class MeetingsListService extends IntentService {
     private List<Meeting> myMeetings = new ArrayList<>(), recentMeetings = new ArrayList<>();
     private List<User> users = new ArrayList<>();
     private MeetingListListener meetingListener;
+    private DatabaseReference db;
 
     public MeetingsListService() {
         super("MeetingsListService");
     }
 
-    public static void startActionLoad(Context context, String userId, boolean toNotify) {
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        db = FirebaseDatabase.getInstance().getReference();
+    }
+
+    public static void startActionLoad(Context context, String userId) {
         Intent intent = new Intent(context, MeetingsListService.class);
         intent.setAction(ACTION_LOAD_DATA);
         intent.putExtra(USER_ID, userId);
-        intent.putExtra(TO_NOTIFY, toNotify);
+        intent.putExtra(TO_NOTIFY, false);
         context.startService(intent);
     }
 
-    public static void startActionCheck(Context context, String userId, boolean toNotify) {
+    public static void startActionCheck(Context context, String userId) {
         Intent intent = new Intent(context, MeetingsListService.class);
-        intent.setAction(ACTION_LOAD_DATA);
+        intent.setAction(ACTION_CHECK_DATA);
         intent.putExtra(USER_ID, userId);
-        intent.putExtra(TO_NOTIFY, toNotify);
+        intent.putExtra(TO_NOTIFY, true);
         context.startService(intent);
     }
 
@@ -71,7 +79,7 @@ public class MeetingsListService extends IntentService {
                 handleActionLoad(userId, toNotify);
             } else if (ACTION_CHECK_DATA.equals(action)) {
                 final String userId = intent.getStringExtra(USER_ID);
-                final boolean toNotify = intent.getBooleanExtra(TO_NOTIFY, false);
+                final boolean toNotify = intent.getBooleanExtra(TO_NOTIFY, true);
                 handleActionCheck(userId, toNotify);
             }
         }
@@ -85,7 +93,6 @@ public class MeetingsListService extends IntentService {
         if (ni != null && ni.isConnected()) {
             myMeetings = new ArrayList<>();
             recentMeetings = new ArrayList<>();
-            DatabaseReference db = FirebaseDatabase.getInstance().getReference();
             meetingListener = new MeetingListListener(db, userId, toNotify);
             db.addValueEventListener(meetingListener); //TODO there's 'permission denied' error
         } else {
@@ -113,17 +120,8 @@ public class MeetingsListService extends IntentService {
         @Override
         public void onDataChange(DataSnapshot dataSnapshot) {
             try {
-                Iterable<DataSnapshot> usersIterable = dataSnapshot.child(User.USERS_KEY).getChildren();
                 Iterable<DataSnapshot> meetingsIterable = dataSnapshot.child(Meeting.MEETINGS_KEY).getChildren();
                 Iterable<DataSnapshot> userMeetingsIterable = dataSnapshot.child(Meeting.USER_MEETINGS_KEY).getChildren();
-
-                usersIterable.forEach(snapshot -> {
-                    User user = snapshot.getValue(User.class);
-                    if (user != null) {
-                        user.setKey(snapshot.getKey());
-                        users.add(user);
-                    }
-                });
 
                 List<Meeting> l = createMeetings(meetingsIterable);
                 recentMeetings.addAll(l);
@@ -210,11 +208,8 @@ public class MeetingsListService extends IntentService {
         ConnectivityManager connMan = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo ni = connMan.getActiveNetworkInfo();
         if (ni != null && ni.isConnected()) {
-            myMeetings = new ArrayList<>();
-            recentMeetings = new ArrayList<>();
             DatabaseReference db = FirebaseDatabase.getInstance().getReference();
-            meetingListener = new MeetingListListener(db, userId, toNotify);
-            db.addValueEventListener(meetingListener);
+            db.addValueEventListener(new NewMeetingListListener(db, userId, toNotify));
         } else {
             responseIntent.setAction(ACTION_LOAD_DATA);
             responseIntent.addCategory(Intent.CATEGORY_DEFAULT);
@@ -223,6 +218,75 @@ public class MeetingsListService extends IntentService {
             responseIntent.putExtra(MainActivity.RECENT_MEETINGS_KEY, (Serializable) recentMeetings);
             sendBroadcast(responseIntent);
             stopSelf();
+        }
+    }
+
+    public class NewMeetingListListener implements ValueEventListener {
+        private DatabaseReference databaseReference;
+        private String userId;
+        private boolean toNotify;
+
+        NewMeetingListListener(DatabaseReference ref, String userId, boolean toNotify) {
+            this.databaseReference = ref;
+            this.userId = userId;
+            this.toNotify = toNotify;
+        }
+
+        @Override
+        public void onDataChange(DataSnapshot dataSnapshot) {
+            try {
+                Iterable<DataSnapshot> meetingsIterable = dataSnapshot.child(Meeting.MEETINGS_KEY).getChildren();
+                int newMeetingsCount = 0;
+                for (DataSnapshot snapshot : meetingsIterable) {
+                    Iterable<DataSnapshot> meeting = snapshot.getChildren();
+                    for (DataSnapshot props : meeting) {
+                        if ("creationTime".equals(props.getKey())) {
+                            Long creationTime = (Long) props.getValue();
+                            if (creationTime != null) {
+                                if (creationTime.compareTo(new Date().getTime() - 1000 * 60 * 10) > 0) {
+                                    newMeetingsCount++;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (toNotify && newMeetingsCount > 0) {
+                    showNotificationForNewMeetings(newMeetingsCount);
+                }
+            } catch (Exception e) {
+                Log.e("UpdateMeeting_E", e.getMessage());
+            } finally {
+                databaseReference.removeEventListener(this);
+                stopSelf();
+            }
+
+        }
+
+        private void showNotificationForNewMeetings(int count) {
+            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(),
+                    0, intent,
+                    PendingIntent.FLAG_CANCEL_CURRENT);
+
+            Notification.Builder builder = new Notification.Builder(getApplicationContext());
+
+            builder.setContentIntent(pendingIntent)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setTicker(getString(R.string.notification))
+                    .setWhen(System.currentTimeMillis())
+                    .setAutoCancel(true)
+                    .setContentTitle(getString(R.string.notification))
+                    .setContentText(getString(R.string.update_notification_text));
+            Notification notification = builder.build();
+
+            NotificationManager manager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            if (manager != null)
+                manager.notify(new Random().nextInt(), notification);
+        }
+
+        @Override
+        public void onCancelled(DatabaseError databaseError) {
+            Log.e("Error:", databaseError.getMessage());
         }
     }
 
