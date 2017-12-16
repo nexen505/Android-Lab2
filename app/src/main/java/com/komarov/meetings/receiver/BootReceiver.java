@@ -23,16 +23,17 @@ public class BootReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         mContext = context;
         String userId = getUid();
+        if (mAlarmMgr == null) {
+            mAlarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            Intent i = new Intent(context, MeetingsListService.class);
+            i.setAction(MeetingsListService.ACTION_CHECK_DATA);
+            i.putExtra(MeetingsListService.USER_ID, userId);
 
-        mAlarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        Intent i = new Intent(context, MeetingsListService.class);
-        i.setAction(MeetingsListService.ACTION_CHECK_DATA);
-        i.putExtra(MeetingsListService.USER_ID, userId);
-
-        mAlarmIntent = PendingIntent.getService(context, 0, i, 0);
-        mAlarmMgr.setRepeating(AlarmManager.RTC_WAKEUP, new Date().getTime(),
-                1000 * 60 * 10, mAlarmIntent);
+            mAlarmIntent = PendingIntent.getService(context, 0, i, 0);
+            mAlarmMgr.setRepeating(AlarmManager.RTC_WAKEUP, new Date().getTime(),
+                    1000 * 60 * 10, mAlarmIntent);
 //        MeetingsListService.startActionCheck(context, userId, toNotify);
+        }
     }
 
     public String getUid() {

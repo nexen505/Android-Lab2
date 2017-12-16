@@ -1,12 +1,20 @@
 package com.komarov.meetings;
 
+import android.content.ContentResolver;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,6 +34,7 @@ import com.komarov.meetings.model.User;
 import com.komarov.meetings.service.NetworkService;
 import com.komarov.meetings.utils.Utils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MeetingDetailActivity extends BaseActivity {
@@ -151,11 +160,77 @@ public class MeetingDetailActivity extends BaseActivity {
                 ad.setNegativeButton(R.string.button_cancel, (dialog, arg1) -> {
                 });
                 ad.show();
-            } else {
-                //TODO implement adding from contacts
+            } else if (view == fabAddContacts) {
+                AlertDialog.Builder ad = new AlertDialog.Builder(this);
+                ad.setTitle("Choose contact");
+                List<String> contacts = getContacts(), chosenContacts = new ArrayList<>(contacts.size());
+                final View inflate = LayoutInflater.from(this).inflate(R.layout.contacts_layout, null);
+                final LinearLayout contactsLayout = inflate.findViewById(R.id.contacts_view);
+                for (String contact : contacts) {
+                    View contactView = LayoutInflater.from(this).inflate(R.layout.contact_layout, null);
+                    TextView contactText = contactView.findViewById(R.id.contactText);
+                    CheckBox checkBox = contactView.findViewById(R.id.contactCheckbox);
+                    contactText.setText(contact);
+                    checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                        if (isChecked) {
+                            chosenContacts.add(contact);
+                        } else {
+                            chosenContacts.remove(contact);
+                        }
+                    });
+                    contactsLayout.addView(contactView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                }
+                ad.setView(inflate);
+
+                ad.setPositiveButton(R.string.button_ok,
+                        (dialog, arg1) -> {
+                            String c = Utils.join(", ", chosenContacts);
+                        }
+                );
+
+                ad.setOnCancelListener(DialogInterface::cancel);
+                ad.show();
             }
             fam.close(true);
         };
+    }
+
+    public List<String> getContacts() {
+        List<String> contacts = new ArrayList<>();
+        Uri contentUri = ContactsContract.Contacts.CONTENT_URI,
+                phoneContentUri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
+        String id = ContactsContract.Contacts._ID,
+                displayName = ContactsContract.Contacts.DISPLAY_NAME,
+                phoneContactId = ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                number = ContactsContract.CommonDataKinds.Phone.NUMBER;
+
+        ContentResolver contentResolver = getContentResolver();
+        Cursor cursor = contentResolver.query(contentUri, null, null, null, null);
+
+        if (cursor != null && cursor.getCount() > 0) {
+            while (cursor.moveToNext()) {
+                String contact_id = cursor.getString(cursor.getColumnIndex(id));
+                String name = cursor.getString(cursor.getColumnIndex(displayName));
+                int hasPhoneNumber = Integer.parseInt(cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)));
+
+                if (hasPhoneNumber > 0) {
+                    StringBuilder stringBuilder = new StringBuilder();
+                    stringBuilder.append("Имя: ").append(name);
+                    Cursor phoneCursor = contentResolver.query(phoneContentUri, null,
+                            phoneContactId + " = ?", new String[]{contact_id}, null);
+                    if (phoneCursor != null) {
+                        while (phoneCursor.moveToNext()) {
+                            String phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(number));
+                            stringBuilder.append("\n Телефон: ").append(phoneNumber);
+                        }
+                        phoneCursor.close();
+                    }
+                    contacts.add(stringBuilder.toString());
+                }
+            }
+            cursor.close();
+        }
+        return contacts;
     }
 
     public void filterFabs(Meeting meeting) {

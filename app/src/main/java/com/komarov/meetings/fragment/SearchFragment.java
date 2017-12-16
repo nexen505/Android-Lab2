@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.komarov.meetings.model.Meeting.MEETINGS_KEY;
+
 /**
  * Created by Ilia on 25.11.2017.
  */
@@ -64,7 +66,7 @@ public class SearchFragment extends MeetingsListFragment {
 
     @Override
     public Query getQuery(DatabaseReference databaseReference) {
-        return databaseReference.child("meetings");
+        return databaseReference.child(MEETINGS_KEY).orderByChild("startDate").startAt("John Doe").endAt("");
     }
 
     private void setMeetingsRecycler(final List<Meeting> meetings) {
