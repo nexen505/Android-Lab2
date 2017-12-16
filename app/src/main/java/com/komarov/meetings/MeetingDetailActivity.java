@@ -1,7 +1,6 @@
 package com.komarov.meetings;
 
 import android.content.ContentResolver;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -29,6 +28,7 @@ import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 import com.komarov.meetings.model.Meeting;
+import com.komarov.meetings.model.PhoneContact;
 import com.komarov.meetings.model.StringDateTime;
 import com.komarov.meetings.model.User;
 import com.komarov.meetings.service.NetworkService;
@@ -36,6 +36,8 @@ import com.komarov.meetings.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class MeetingDetailActivity extends BaseActivity {
     private static final String TAG = "MeetingDetailActivity";
@@ -49,7 +51,7 @@ public class MeetingDetailActivity extends BaseActivity {
             mTitleView, mDescriptionView, mPriorityView,
             mStartDateView, mStartTimeView,
             mEndDateView, mEndTimeView;
-    private RelativeLayout mParticipantsLayout;
+    private RelativeLayout mParticipantsLayout, mPhoneContactsLayout;
 
     private FloatingActionMenu fam;
     private FloatingActionButton fabEdit, fabDelete, fabVisit, fabLeave, fabAddContacts;
@@ -72,6 +74,7 @@ public class MeetingDetailActivity extends BaseActivity {
 
         initializeViews();
         mParticipantsLayout = findViewById(R.id.layout_participants);
+        mPhoneContactsLayout = findViewById(R.id.meeting_phone_contacts);
     }
 
     private void initializeViews() {
@@ -184,19 +187,21 @@ public class MeetingDetailActivity extends BaseActivity {
 
                 ad.setPositiveButton(R.string.button_ok,
                         (dialog, arg1) -> {
-                            String c = Utils.join(", ", chosenContacts);
+                            final String s = Utils.join("\n", chosenContacts);
+                            addContactsToMeeting(mMeetingGlobalRef, mUserRef, s);
+                            addContactsToMeeting(mMeetingRef, mUserRef, s);
                         }
                 );
 
-                ad.setOnCancelListener(DialogInterface::cancel);
+                ad.setNegativeButton(R.string.button_cancel, (dialog, arg1) -> {
+                });
                 ad.show();
             }
             fam.close(true);
         };
     }
 
-    public List<String> getContacts() {
-        List<String> contacts = new ArrayList<>();
+    private List<String> getContacts() {
         Uri contentUri = ContactsContract.Contacts.CONTENT_URI,
                 phoneContentUri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
         String id = ContactsContract.Contacts._ID,
@@ -207,6 +212,7 @@ public class MeetingDetailActivity extends BaseActivity {
         ContentResolver contentResolver = getContentResolver();
         Cursor cursor = contentResolver.query(contentUri, null, null, null, null);
 
+        List<PhoneContact> contacts = new ArrayList<>();
         if (cursor != null && cursor.getCount() > 0) {
             while (cursor.moveToNext()) {
                 String contact_id = cursor.getString(cursor.getColumnIndex(id));
@@ -214,26 +220,28 @@ public class MeetingDetailActivity extends BaseActivity {
                 int hasPhoneNumber = Integer.parseInt(cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)));
 
                 if (hasPhoneNumber > 0) {
-                    StringBuilder stringBuilder = new StringBuilder();
-                    stringBuilder.append("Имя: ").append(name);
+                    PhoneContact contact = new PhoneContact();
+                    contact.setName(name);
                     Cursor phoneCursor = contentResolver.query(phoneContentUri, null,
                             phoneContactId + " = ?", new String[]{contact_id}, null);
                     if (phoneCursor != null) {
+                        List<String> phones = new ArrayList<>(phoneCursor.getCount());
                         while (phoneCursor.moveToNext()) {
                             String phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(number));
-                            stringBuilder.append("\n Телефон: ").append(phoneNumber);
+                            phones.add(phoneNumber);
                         }
+                        contact.setPhones(phones);
                         phoneCursor.close();
                     }
-                    contacts.add(stringBuilder.toString());
+                    contacts.add(contact);
                 }
             }
             cursor.close();
         }
-        return contacts;
+        return contacts.stream().map(PhoneContact::toString).collect(Collectors.toList());
     }
 
-    public void filterFabs(Meeting meeting) {
+    private void filterFabs(Meeting meeting) {
         if (meeting != null) {
             if (!getUid().equals(meeting.getUid())) {
                 fabEdit.setVisibility(View.GONE);
@@ -300,6 +308,15 @@ public class MeetingDetailActivity extends BaseActivity {
             view.setText(participants);
             mParticipantsLayout.addView(view, layoutParams);
         }
+        final String phoneContacts = meeting.getPhoneContacts();
+        if (!Utils.isEmpty(phoneContacts)) {
+            TextView view = new TextView(this);
+            String participants = "Участники: ".concat(phoneContacts);
+            view.setGravity(Gravity.START);
+            RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            view.setText(participants);
+            mPhoneContactsLayout.addView(view, layoutParams);
+        }
 
     }
 
@@ -322,6 +339,37 @@ public class MeetingDetailActivity extends BaseActivity {
     }
 
     private void toDecideClicked(DatabaseReference meetingRef, DatabaseReference userRef, boolean decision) {
+        runTransaction(meetingRef, userRef, user -> mutableData -> {
+            Meeting p = mutableData.getValue(Meeting.class);
+            if (p == null) {
+                return Transaction.success(mutableData);
+            }
+
+            if (decision) p.addParticipant(getUid(), user.getUsername());
+            else p.removeParticipant(getUid());
+
+            mutableData.setValue(p);
+            return Transaction.success(mutableData);
+        });
+    }
+
+    private void addContactsToMeeting(DatabaseReference meetingRef, DatabaseReference userRef, String contacts) {
+        runTransaction(meetingRef, userRef, user -> mutableData -> {
+            Meeting p = mutableData.getValue(Meeting.class);
+            if (p == null) {
+                return Transaction.success(mutableData);
+            }
+
+            if (!Utils.isEmpty(contacts)) {
+                p.setPhoneContacts(contacts);
+            }
+
+            mutableData.setValue(p);
+            return Transaction.success(mutableData);
+        });
+    }
+
+    private void runTransaction(DatabaseReference meetingRef, DatabaseReference userRef, Function<User, Function<MutableData, Transaction.Result>> transactionFunc) {
         NetworkService.startActionCheckNetwork(this);
         userRef.addListenerForSingleValueEvent(
                 new ValueEventListener() {
@@ -338,16 +386,7 @@ public class MeetingDetailActivity extends BaseActivity {
                             meetingRef.runTransaction(new Transaction.Handler() {
                                 @Override
                                 public Transaction.Result doTransaction(MutableData mutableData) {
-                                    Meeting p = mutableData.getValue(Meeting.class);
-                                    if (p == null) {
-                                        return Transaction.success(mutableData);
-                                    }
-
-                                    if (decision) p.addParticipant(getUid(), user.getUsername());
-                                    else p.removeParticipant(getUid());
-
-                                    mutableData.setValue(p);
-                                    return Transaction.success(mutableData);
+                                    return transactionFunc.apply(user).apply(mutableData);
                                 }
 
                                 @Override

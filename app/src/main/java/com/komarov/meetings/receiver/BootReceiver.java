@@ -11,8 +11,6 @@ import com.google.firebase.auth.FirebaseUser;
 import com.komarov.meetings.LoginActivity;
 import com.komarov.meetings.service.MeetingsListService;
 
-import java.util.Date;
-
 public class BootReceiver extends BroadcastReceiver {
 
     private AlarmManager mAlarmMgr;
@@ -30,7 +28,7 @@ public class BootReceiver extends BroadcastReceiver {
             i.putExtra(MeetingsListService.USER_ID, userId);
 
             mAlarmIntent = PendingIntent.getService(context, 0, i, 0);
-            mAlarmMgr.setRepeating(AlarmManager.RTC_WAKEUP, new Date().getTime(),
+            mAlarmMgr.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(),
                     1000 * 60 * 10, mAlarmIntent);
 //        MeetingsListService.startActionCheck(context, userId, toNotify);
         }

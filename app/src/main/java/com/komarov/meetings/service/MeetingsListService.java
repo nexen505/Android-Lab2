@@ -78,9 +78,8 @@ public class MeetingsListService extends IntentService {
                 final boolean toNotify = intent.getBooleanExtra(TO_NOTIFY, false);
                 handleActionLoad(userId, toNotify);
             } else if (ACTION_CHECK_DATA.equals(action)) {
-                final String userId = intent.getStringExtra(USER_ID);
                 final boolean toNotify = intent.getBooleanExtra(TO_NOTIFY, true);
-                handleActionCheck(userId, toNotify);
+                handleActionCheck(toNotify);
             }
         }
     }
@@ -202,14 +201,14 @@ public class MeetingsListService extends IntentService {
         }
     }
 
-    private void handleActionCheck(final String userId, final boolean toNotify) {
+    private void handleActionCheck(final boolean toNotify) {
         Intent responseIntent = new Intent();
 
         ConnectivityManager connMan = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo ni = connMan.getActiveNetworkInfo();
         if (ni != null && ni.isConnected()) {
             DatabaseReference db = FirebaseDatabase.getInstance().getReference();
-            db.addValueEventListener(new NewMeetingListListener(db, userId, toNotify));
+            db.addValueEventListener(new NewMeetingListListener(db, toNotify));
         } else {
             responseIntent.setAction(ACTION_LOAD_DATA);
             responseIntent.addCategory(Intent.CATEGORY_DEFAULT);
@@ -223,12 +222,10 @@ public class MeetingsListService extends IntentService {
 
     public class NewMeetingListListener implements ValueEventListener {
         private DatabaseReference databaseReference;
-        private String userId;
         private boolean toNotify;
 
-        NewMeetingListListener(DatabaseReference ref, String userId, boolean toNotify) {
+        NewMeetingListListener(DatabaseReference ref, boolean toNotify) {
             this.databaseReference = ref;
-            this.userId = userId;
             this.toNotify = toNotify;
         }
 

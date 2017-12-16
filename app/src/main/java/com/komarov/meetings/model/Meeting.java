@@ -29,6 +29,7 @@ public class Meeting implements Serializable {
     private String key;
     private String uid;
     private String author;
+    private String phoneContacts;
     private String title;
     private String description;
     private long creationTime;
@@ -49,9 +50,10 @@ public class Meeting implements Serializable {
         this.creationTime = new Date().getTime();
     }
 
-    public Meeting(String uid, String author, String title, String description, Date startDate, Date endDate, Map<String, String> participants, Priority priority) {
+    public Meeting(String uid, String author, String phoneContacts, String title, String description, Date startDate, Date endDate, Map<String, String> participants, Priority priority) {
         this.uid = uid;
         this.author = author;
+        this.phoneContacts = phoneContacts;
         this.title = title;
         this.description = description;
         this.startDate = startDate;
@@ -91,6 +93,14 @@ public class Meeting implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getPhoneContacts() {
+        return phoneContacts;
+    }
+
+    public void setPhoneContacts(String phoneContacts) {
+        this.phoneContacts = phoneContacts;
     }
 
     public long getCreationTime() {
@@ -191,6 +201,7 @@ public class Meeting implements Serializable {
         result.put("author", author);
         result.put("title", title);
         result.put("description", description);
+        result.put("phoneContacts", phoneContacts);
         result.put("creationTime", creationTime);
         result.put("startDate", startDate);
         result.put("endDate", endDate);

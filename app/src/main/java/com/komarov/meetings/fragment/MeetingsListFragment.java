@@ -17,20 +17,15 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.komarov.meetings.LoginActivity;
-import com.komarov.meetings.MeetingDetailActivity;
 import com.komarov.meetings.R;
+import com.komarov.meetings.adapter.FirebaseMeetingsAdapter;
 import com.komarov.meetings.model.Meeting;
 import com.komarov.meetings.viewholder.MeetingViewHolder;
-
-import java.util.List;
 
 
 public abstract class MeetingsListFragment extends Fragment {
 
-    private static final String TAG = "MeetingsListFragment";
-
     private RecyclerView mRecycler;
-    //    private RecyclerView.Adapter mAdapter;
     private FirebaseRecyclerAdapter<Meeting, MeetingViewHolder> mAdapter;
 
     public MeetingsListFragment() {
@@ -66,30 +61,8 @@ public abstract class MeetingsListFragment extends Fragment {
                 .setQuery(meetingsQuery, Meeting.class)
                 .build();
 
-        mAdapter = new FirebaseRecyclerAdapter<Meeting, MeetingViewHolder>(options) {
+        mAdapter = new FirebaseMeetingsAdapter(options, getActivity());
 
-            @Override
-            public MeetingViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-                LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
-                return new MeetingViewHolder(inflater.inflate(R.layout.item_meeting, viewGroup, false));
-            }
-
-            @Override
-            protected void onBindViewHolder(MeetingViewHolder viewHolder, int position, final Meeting model) {
-                final DatabaseReference meetingRef = getRef(position);
-
-                final String meetingKey = meetingRef.getKey();
-                viewHolder.itemView.setOnClickListener(v -> {
-                    Intent intent = new Intent(getActivity(), MeetingDetailActivity.class);
-                    intent.putExtra(MeetingDetailActivity.EXTRA_MEETING_KEY, meetingKey);
-                    startActivity(intent);
-                });
-
-                viewHolder.bindToMeeting(model);
-            }
-        };
-
-        //TODO some how filter options by date
         mRecycler.setAdapter(mAdapter);
     }
 
@@ -133,5 +106,4 @@ public abstract class MeetingsListFragment extends Fragment {
 
     public abstract Query getQuery(DatabaseReference databaseReference);
 
-    public abstract List<Meeting> getMeetings();
 }

@@ -1,7 +1,5 @@
 package com.komarov.meetings;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -19,28 +17,20 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.komarov.meetings.fragment.AllMeetingsFragment;
 import com.komarov.meetings.fragment.MyMeetingsFragment;
 import com.komarov.meetings.fragment.SearchFragment;
-import com.komarov.meetings.model.Meeting;
 import com.komarov.meetings.receiver.BootReceiver;
 import com.komarov.meetings.service.MeetingsListService;
-
-import java.util.List;
 
 public class MainActivity extends BaseActivity {
 
     public static final String MY_MEETINGS_KEY = "myMeetings", RECENT_MEETINGS_KEY = "recentMeetings";
 
     private static final String TAG = "MainActivity";
-    private List<Meeting> myMeetings, recentMeetings;
     private OnUpdateReceiver mOnUpdateReceiver;
-    private AlarmManager mAlarmMgr;
-    private PendingIntent mAlarmIntent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        myMeetings = (List<Meeting>) getIntent().getSerializableExtra(MY_MEETINGS_KEY);
-        recentMeetings = (List<Meeting>) getIntent().getSerializableExtra(RECENT_MEETINGS_KEY);
 
         ViewPager mViewPager = findViewById(R.id.container);
         mViewPager.setAdapter(new FragmentPagerAdapter(getSupportFragmentManager()) {
@@ -113,31 +103,14 @@ public class MainActivity extends BaseActivity {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
             return true;
-        } else if (id == R.id.action_update) {
-            updateMeetings();
-            return true;
         } else {
             return super.onOptionsItemSelected(item);
         }
     }
 
-    public List<Meeting> getMyMeetings() {
-        return myMeetings;
-    }
-
-    public List<Meeting> getRecentMeetings() {
-        return recentMeetings;
-    }
-
-    public void updateMeetings() {
-        MeetingsListService.startActionLoad(getApplicationContext(), getUid());
-    }
-
     public class OnUpdateReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            myMeetings = (List<Meeting>) intent.getSerializableExtra(MainActivity.MY_MEETINGS_KEY);
-            recentMeetings = (List<Meeting>) intent.getSerializableExtra(MainActivity.RECENT_MEETINGS_KEY);
             Toast.makeText(getApplicationContext(), R.string.data_is_loaded_msg, Toast.LENGTH_LONG).show();
         }
     }
